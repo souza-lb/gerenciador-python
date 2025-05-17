@@ -99,13 +99,13 @@ gerenciador-python listar
 Execute no terminal como usuário comum
 
 ```bash
-gerenciador-python definir incluir-versao
+gerenciador-python definir 3.11.12
 ```
 
 Se você deseja aplicar imediatamente a mudança no terminal corrente sem precisar fechá-lo execute então (inclua um ponto na frente do comando):
 
 ```bash
-. gerenciador-python definir incluir versao
+. gerenciador-python definir 3.11.12
 ```
 
 Em seguida liste novamente com
@@ -121,7 +121,7 @@ Repare que agora é exibido um asterisco (*) indicando qual a versão está defi
 Vamos verificar qual versão está definida como corrente. Execute no terminal:
 
 ```bash
-python --version
+python3 --version
 ```
 Observe a saída abaixo
 
