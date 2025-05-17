@@ -143,7 +143,7 @@ gerenciador-python listar
 Vamos verificar se a versão incluir versao realmente está em uso. Execute no terminal
 
 ```bash
-python --version
+python3 --version
 ```
 
 Observe a saída conforme abaixo
