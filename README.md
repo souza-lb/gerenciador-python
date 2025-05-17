@@ -28,7 +28,7 @@ tarefas repetitivas.
 
 <b> Como ele faz isso?</b>
 Utilizando apenas 2 dependências (tar e wget) geralmente já pré instaladas em sistemas Debian e links simbólicos. O gerenciador
-extrai o arquivo com o pacote jdk para pasta do usuário e organiza em pastas de acordo com o número da versão.  O script tenta 
+extrai o arquivo com o pacote python para pasta do usuário, efetua a compilação e organiza em pastas de acordo com o número da versão.  O script tenta 
 extrair do nome do arquivo o número da versão. Caso ele não consiga solicita ao usuário o fornecimento manual da versão.
 Ele pode promover a instalação de arquivos locais ou através de uma url. Utilizando apenas ferramentas nativas o script controla as 
 variáveis de ambiente no basrc garantindo que elas apontem para a versão que o usuário deseja utilizar no momento.
