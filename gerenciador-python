@@ -1,0 +1,288 @@
+#!/bin/bash
+
+# Autor: Leonardo Bruno
+# Versão: 2.0
+# data: 26/03/2025
+
+# O que esse script faz?
+# Ele permite manter e alternar o uso de múltiplas
+# versões do Python de forma organizada.
+
+# Diretório para instalação das versões Python
+DIR_PYTHON="$HOME/.versoes_python"
+# Link simbólico para versão atual selecionada
+DIR_ATUAL="$DIR_PYTHON/atual"
+# Arquivo de configuração do shell
+ARQUIVO_BASHRC="$HOME/.bashrc"
+# Arquivo controle de configuração
+CONFIGURADO="$DIR_PYTHON/.configurado"
+
+# Função para gerenciar as configurações do .bashrc
+gerenciar_bashrc() {
+    local acao="$1"
+    
+    # Adiciona o bloco de configuração se não existir
+    if ! grep -q "# CONFIG_PYTHON_AUTO" "$ARQUIVO_BASHRC"; then
+        echo -e "\n# CONFIG_PYTHON_AUTO" >> "$ARQUIVO_BASHRC"
+        if [ "$acao" = "ativar" ]; then
+            echo "export PYTHON_HOME=\"$DIR_ATUAL\"" >> "$ARQUIVO_BASHRC"
+            echo 'export PATH="$PYTHON_HOME/bin:$PATH"' >> "$ARQUIVO_BASHRC"
+        else
+            echo "# export PYTHON_HOME=\"$DIR_ATUAL\"" >> "$ARQUIVO_BASHRC"
+            echo '# export PATH="$PYTHON_HOME/bin:$PATH"' >> "$ARQUIVO_BASHRC"
+        fi
+        echo "# ------------------------------" >> "$ARQUIVO_BASHRC"
+    fi
+
+    # Aplica ação de ativar/desativar
+    case "$acao" in
+        ativar)
+            # Descomenta as linhas de configuração
+            sed -i '/^# CONFIG_PYTHON_AUTO$/,/^# ------------------------------$/ { /^# export / s/^# // }' "$ARQUIVO_BASHRC"
+            ;;
+        desativar)
+            # Comenta as linhas de configuração
+            sed -i '/^# CONFIG_PYTHON_AUTO$/,/^# ------------------------------$/ { /^export / s/^/# / }' "$ARQUIVO_BASHRC"
+            ;;
+        *)
+            echo "Ação inválida para gerenciar_bashrc: $acao"
+            exit 1
+            ;;
+    esac
+
+    # Recarrega as configurações do ambiente
+    source "$ARQUIVO_BASHRC" >/dev/null 2>&1
+}
+
+# Exibe ajuda com opções de uso
+mostrar_ajuda() {
+    echo "Uso: gerenciador-python [comando]"
+    echo ""
+    echo "Comandos disponíveis:"
+    echo "  instalar [url/arquivo] - Instala versão Python por url ou arquivo local"
+    echo "  definir [versão]       - Define versão Python como padrão"
+    echo "  remover [versão]       - Remove completamente versão Python já instalada"
+    echo "  listar                 - Lista todas as versões Python instaladas"
+    echo "  desativar              - Desativa versão Python definida como padrão"
+    echo "  ajuda                  - Exibe esta mensagem de ajuda"
+}
+
+# Desativa o python padrão
+desativar_padrao() {
+    if [ -L "$DIR_ATUAL" ]; then
+        rm -f "$DIR_ATUAL"
+        echo "Versão gerenciada desativada. Usando Python nativo do sistema."
+        gerenciar_bashrc "desativar"
+    else
+        echo "Nenhuma versão gerenciada ativa. O sistema já usa o Python nativo."
+    fi
+}
+
+# Define versão para uso corrente
+definir_versao() {
+    [ -z "$1" ] && echo "Erro: Versão não informada!" && exit 1
+
+    local versao="$1"
+    local alvo="$DIR_PYTHON/$versao"
+
+    if [ ! -d "$alvo" ]; then
+        echo "Versão $versao não encontrada!"
+        echo "Use 'gerenciador-python listar' para ver as disponíveis"
+        exit 1
+    fi
+    
+    # Atualiza link simbólico
+    echo "Atualizando link simbólico..."
+    rm -f "$DIR_ATUAL"
+    ln -sf "$alvo" "$DIR_ATUAL"
+
+    # Atualiza configurações do ambiente
+    gerenciar_bashrc "ativar"
+
+    if [ ! -t 1 ]; then
+        echo "export PYTHON_HOME=\"$DIR_ATUAL\";"
+        echo "export PATH=\"\$PYTHON_HOME/bin:\$PATH\";"
+    else
+        echo "Versão $versao definida como padrão!"
+    fi
+}
+
+# Extrai o número da versão do arquivo
+extrair_versao() {
+    local nome_arquivo=$(basename "$1")
+    echo "$nome_arquivo" | grep -oP 'Python-\K\d+\.\d+\.\d+[a-zA-Z0-9]*'
+}
+
+# Instala nova versão através de URL/ arquivo
+instalar_python() {
+    [ -z "$1" ] && echo "Erro: URL/arquivo não fornecido!" && exit 1
+
+    local source="$1"
+    local nome_arquivo=$(basename "$source")
+    local temp_file="/tmp/$nome_arquivo"
+    
+    # Verifica se é URL ou arquivo local
+    if [[ "$source" =~ ^https?:// ]]; then
+        echo "Baixando Python via URL..."
+        if ! wget -q --show-progress "$source" -O "$temp_file"; then
+            echo "Falha no download!"
+            exit 1
+        fi
+    else
+        if [ ! -f "$source" ]; then
+            echo "Erro: Arquivo local '$source' não encontrado!"
+            exit 1
+        fi
+        echo "Usando arquivo local..."
+        cp "$source" "$temp_file" || exit 1
+    fi
+
+    local versao=$(extrair_versao "$temp_file")
+
+    # Validação da versão
+    if [[ ! "$versao" =~ ^[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9]*$ ]]; then
+        echo "Formato de versão inválido: $versao"
+        echo "Exemplos válidos: 3.14.0a6, 3.13.2, 3.12.0rc1"
+        read -p "Digite a versão manualmente: " versao
+        [ -z "$versao" ] && echo "Versão necessária!" && exit 1
+    fi
+
+    local diretorio_destino="$DIR_PYTHON/$versao"
+
+    if [ -d "$diretorio_destino" ]; then
+        echo "A versão $versao já está instalada!"
+        rm "$temp_file"
+        return
+    fi
+
+    echo "Compilando Python $versao..."
+    mkdir -p "/tmp/python-$versao"
+    if ! tar -xf "$temp_file" -C "/tmp/python-$versao" --strip-components=1; then
+        echo "Erro ao extrair arquivo!"
+        rm -rf "$temp_file" "/tmp/python-$versao"
+        exit 1
+    fi
+    
+    if (
+        cd "/tmp/python-$versao" || exit 1
+        # ./configure --prefix="$diretorio_destino" --enable-optimizations > /dev/null
+        ./configure --prefix="$diretorio_destino" > /dev/null
+        make -j$(nproc) > /dev/null
+        make install > /dev/null
+    ); then
+        rm -rf "/tmp/python-$versao" "$temp_file"
+        # Configura ambiente na primeira instalação
+        if [ ! -f "$CONFIGURADO" ]; then
+            gerenciar_bashrc "desativar"
+            touch "$CONFIGURADO"
+        fi
+        echo "Python $versao instalado com sucesso!"
+    else
+        echo "Falha na compilação do Python $versao!"
+        rm -rf "/tmp/python-$versao" "$temp_file"
+        exit 1
+    fi
+}
+
+# Remove versão já instalada
+remover_versao() {
+    [ -z "$1" ] && echo "Erro: Versão não informada!" && exit 1
+
+    local versao="$1"
+    local alvo="$DIR_PYTHON/$versao"
+    local link_atual=$(readlink "$DIR_ATUAL" 2>/dev/null)
+    local versao_atual=""
+
+    # Obtém versão atual apenas se o link e diretório forem válidos
+    if [ -n "$link_atual" ] && [ -d "$link_atual" ]; then
+        versao_atual=$(basename "$link_atual")
+    fi
+
+    # Validações
+    if [ ! -d "$alvo" ]; then
+        echo "Versão $versao não encontrada!"
+        exit 1
+    fi
+
+    if [ "$versao" = "$versao_atual" ]; then
+        echo "Não é possível remover a versão em uso!"
+        echo "Mude para outra versão antes de remover"
+        exit 1
+    fi
+
+    read -p "Confirmar remoção PERMANENTE do Python $versao? [s/N] " confirmacao
+    if [[ "$confirmacao" =~ [sS] ]]; then
+        echo "Removendo Python $versao..."
+        rm -rf "$alvo"
+        [ $? -eq 0 ] && echo "Versão removida!" || echo "Falha na remoção!"
+    else
+        echo "Operação cancelada"
+    fi
+}
+
+# Lista versões instaladas disponíveis para uso
+listar_versoes() {
+    local link_atual=$(readlink "$DIR_ATUAL" 2>/dev/null)
+    local versao_atual=""
+    
+    if [ -n "$link_atual" ] && [ -d "$link_atual" ]; then
+        versao_atual=$(basename "$link_atual")
+    fi
+
+    # Verifica se o diretório Python existe
+    if [ ! -d "$DIR_PYTHON" ]; then
+        echo "Nenhuma versão do Python foi instalada ainda."
+        return
+    fi
+
+    # Obtém lista de versões válidas
+    local versoes=$(ls "$DIR_PYTHON" 2>/dev/null | grep -vE '^(atual|.configurado)$')
+
+    # Verifica se há versões instaladas
+    if [ -z "$versoes" ]; then
+        echo "Nenhuma versão do Python foi instalada ainda."
+        return
+    fi
+
+    echo "Versões disponíveis:"
+    # Lista versões ordenadas semanticamente
+    for versao in $(echo "$versoes" | sort -V); do
+        if [ "$versao" == "$versao_atual" ]; then
+            echo "* $versao"
+        else
+            echo "  $versao"
+        fi
+    done
+
+    # Aviso se nenhuma versão está definida
+    if [ -z "$versao_atual" ]; then
+        echo "Aviso: Usando Python nativo do sistema"
+    fi
+}
+
+# Controle principal de execução
+case "$1" in
+    "instalar")
+        instalar_python "$2"
+        ;;
+    "definir")
+        definir_versao "$2"
+        ;;
+    "remover")
+        remover_versao "$2"
+        ;;
+    "listar")
+        listar_versoes
+        ;;
+    "desativar")
+        desativar_padrao
+        ;;
+    "ajuda"|"")
+        mostrar_ajuda
+        ;;
+    *)
+        echo "Comando inválido!"
+        mostrar_ajuda
+        exit 1
+        ;;
+esac
