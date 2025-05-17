@@ -167,18 +167,18 @@ Observe a pasta que armazena as versões disponíveis
 Alterne para a versão incluir versao e tente novamente a remoção
 
 ```bash
-. gerenciador-python definir incluir versao
+. gerenciador-python definir 3.11.12
 ```
 
 Agora remova com
 
 ```bash
-gerenciador-python remover incluir versao
+gerenciador-python remover 3.14.0b1
 ```
 
 Confirme a remoção
 
-![Tela confirmação remoção](/imagens/tela-confirmação-remoção.png)
+![Tela confirmação remoção](/imagens/tela-confirmacao-remocao.png)
 
 
 Observe a mudança na pasta que armazena as versões
