@@ -130,7 +130,7 @@ Observe a saída abaixo
 Agora vamos alternar para a versão mais recente. Execute no terminal
 
 ```bash
-. gerenciador-python definir incluir versao
+. gerenciador-python definir 3.14.0b1
 ```
 Experimente listar novamente as versões disponíveis (repare que o asterisco aponta a nova versão como padrão)
 
@@ -153,7 +153,7 @@ Observe a saída conforme abaixo
 <b>Vamos abordar a opção de remoção de versões do node. Tente remover uma versão em uso conforme abaixo</b>
 
 ```bash
-gerenciador-python remover incluir versao
+gerenciador-python remover 3.14.0b1
 ```
 
 Você receberá a seguinte saída:
