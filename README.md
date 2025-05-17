@@ -125,7 +125,7 @@ python --version
 ```
 Observe a saída abaixo
 
-![Tela node atual](/imagens/tela-python-atual.png)
+![Tela python atual](/imagens/tela-python-atual.png)
 
 Agora vamos alternar para a versão mais recente. Execute no terminal
 
@@ -148,7 +148,7 @@ python --version
 
 Observe a saída conforme abaixo
 
-![Tela node novo](/imagens/tela-python-novo.png)
+![Tela python novo](/imagens/tela-python-novo.png)
 
 <b>Vamos abordar a opção de remoção de versões do node. Tente remover uma versão em uso conforme abaixo</b>
 
