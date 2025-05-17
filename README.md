@@ -68,7 +68,7 @@ gerenciador-python
 <b>No terminal execute:</b>
 
 ```bash
-gerenciador-python instalar https://www.python.org/ftp/python/3.9.22/Python-3.9.22.tar.xz
+gerenciador-python instalar https://www.python.org/ftp/python/3.11.12/Python-3.11.12.tar.xz
 ```
 <b>Aguarde a finalização do processo de download</b>
 
@@ -76,7 +76,7 @@ gerenciador-python instalar https://www.python.org/ftp/python/3.9.22/Python-3.9.
 
 <b>Após a conclusão do download e compilação (o processo de compilação pode demorar um pouco dependendo da sua máquina) você deverá receber a mensagem abaixo</b>
 
-![Tela sucesso instalação](/imagens/tela-sucesso-download.png)
+![Tela sucesso instalação](/imagens/tela-sucesso-download-compilacao.png)
 
 <b>Prossiga com a instalação de uma nova versão do python</b>
 
