@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Autor: Leonardo Bruno
-# Versão: 2.0
-# data: 26/03/2025
+# Versão: 3.0
+# data: 17/05/2025
 
 # O que esse script faz?
 # Ele permite manter e alternar o uso de múltiplas
@@ -46,7 +46,7 @@ gerenciar_bashrc() {
             ;;
         *)
             echo "Ação inválida para gerenciar_bashrc: $acao"
-            exit 1
+            return 1
             ;;
     esac
 
@@ -80,7 +80,7 @@ desativar_padrao() {
 
 # Define versão para uso corrente
 definir_versao() {
-    [ -z "$1" ] && echo "Erro: Versão não informada!" && exit 1
+    [ -z "$1" ] && echo "Erro: Versão não informada!" && return 1
 
     local versao="$1"
     local alvo="$DIR_PYTHON/$versao"
@@ -88,7 +88,7 @@ definir_versao() {
     if [ ! -d "$alvo" ]; then
         echo "Versão $versao não encontrada!"
         echo "Use 'gerenciador-python listar' para ver as disponíveis"
-        exit 1
+        return 1
     fi
     
     # Atualiza link simbólico
@@ -126,15 +126,15 @@ instalar_python() {
         echo "Baixando Python via URL..."
         if ! wget -q --show-progress "$source" -O "$temp_file"; then
             echo "Falha no download!"
-            exit 1
+            return 1
         fi
     else
         if [ ! -f "$source" ]; then
             echo "Erro: Arquivo local '$source' não encontrado!"
-            exit 1
+            return 1
         fi
         echo "Usando arquivo local..."
-        cp "$source" "$temp_file" || exit 1
+        cp "$source" "$temp_file" || return 1
     fi
 
     local versao=$(extrair_versao "$temp_file")
@@ -144,7 +144,7 @@ instalar_python() {
         echo "Formato de versão inválido: $versao"
         echo "Exemplos válidos: 3.14.0a6, 3.13.2, 3.12.0rc1"
         read -p "Digite a versão manualmente: " versao
-        [ -z "$versao" ] && echo "Versão necessária!" && exit 1
+        [ -z "$versao" ] && echo "Versão necessária!" && return 1
     fi
 
     local diretorio_destino="$DIR_PYTHON/$versao"
@@ -160,11 +160,11 @@ instalar_python() {
     if ! tar -xf "$temp_file" -C "/tmp/python-$versao" --strip-components=1; then
         echo "Erro ao extrair arquivo!"
         rm -rf "$temp_file" "/tmp/python-$versao"
-        exit 1
+        return 1
     fi
     
     if (
-        cd "/tmp/python-$versao" || exit 1
+        cd "/tmp/python-$versao" || return 1
         # ./configure --prefix="$diretorio_destino" --enable-optimizations > /dev/null
         ./configure --prefix="$diretorio_destino" > /dev/null
         make -j$(nproc) > /dev/null
@@ -180,13 +180,13 @@ instalar_python() {
     else
         echo "Falha na compilação do Python $versao!"
         rm -rf "/tmp/python-$versao" "$temp_file"
-        exit 1
+        return 1
     fi
 }
 
 # Remove versão já instalada
 remover_versao() {
-    [ -z "$1" ] && echo "Erro: Versão não informada!" && exit 1
+    [ -z "$1" ] && echo "Erro: Versão não informada!" && return 1
 
     local versao="$1"
     local alvo="$DIR_PYTHON/$versao"
@@ -201,13 +201,13 @@ remover_versao() {
     # Validações
     if [ ! -d "$alvo" ]; then
         echo "Versão $versao não encontrada!"
-        exit 1
+        return 1
     fi
 
     if [ "$versao" = "$versao_atual" ]; then
         echo "Não é possível remover a versão em uso!"
         echo "Mude para outra versão antes de remover"
-        exit 1
+        return 1
     fi
 
     read -p "Confirmar remoção PERMANENTE do Python $versao? [s/N] " confirmacao
@@ -283,6 +283,6 @@ case "$1" in
     *)
         echo "Comando inválido!"
         mostrar_ajuda
-        exit 1
+        return 1
         ;;
 esac
