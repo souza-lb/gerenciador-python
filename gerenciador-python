@@ -1,25 +1,29 @@
 #!/bin/bash
+set -euo pipefail
 
 # Autor: Leonardo Bruno
-# Versão: 3.0
-# data: 17/05/2025
+# Versão: 4.0
+# data: 19/05/2025
 
 # O que esse script faz?
 # Ele permite manter e alternar o uso de múltiplas
-# versões do Python de forma organizada.
+# versões do Python de forma organizada e prática.
 
-# Diretório para instalação das versões Python
+# Pasta destino para instalação versões node Python
 DIR_PYTHON="$HOME/.versoes_python"
+
 # Link simbólico para versão atual selecionada
 DIR_ATUAL="$DIR_PYTHON/atual"
+
 # Arquivo de configuração do shell
 ARQUIVO_BASHRC="$HOME/.bashrc"
+
 # Arquivo controle de configuração
 CONFIGURADO="$DIR_PYTHON/.configurado"
 
 # Função para gerenciar as configurações do .bashrc
 gerenciar_bashrc() {
-    local acao="$1"
+    local acao="${1:-}"
     
     # Adiciona o bloco de configuração se não existir
     if ! grep -q "# CONFIG_PYTHON_AUTO" "$ARQUIVO_BASHRC"; then
@@ -80,9 +84,9 @@ desativar_padrao() {
 
 # Define versão para uso corrente
 definir_versao() {
-    [ -z "$1" ] && echo "Erro: Versão não informada!" && return 1
+    [ -z "${1:-}" ] && echo "Erro: Versão não informada!" && return 1
 
-    local versao="$1"
+    local versao="${1:-}"
     local alvo="$DIR_PYTHON/$versao"
 
     if [ ! -d "$alvo" ]; then
@@ -109,15 +113,15 @@ definir_versao() {
 
 # Extrai o número da versão do arquivo
 extrair_versao() {
-    local nome_arquivo=$(basename "$1")
+    local nome_arquivo=$(basename "${1:-}")
     echo "$nome_arquivo" | grep -oP 'Python-\K\d+\.\d+\.\d+[a-zA-Z0-9]*'
 }
 
 # Instala nova versão através de URL/ arquivo
 instalar_python() {
-    [ -z "$1" ] && echo "Erro: URL/arquivo não fornecido!" && exit 1
+    [ -z "${1-}" ] && echo "Erro: URL/arquivo não fornecido!" && return 1
 
-    local source="$1"
+    local source="${1:-}"
     local nome_arquivo=$(basename "$source")
     local temp_file="/tmp/$nome_arquivo"
     
@@ -186,9 +190,9 @@ instalar_python() {
 
 # Remove versão já instalada
 remover_versao() {
-    [ -z "$1" ] && echo "Erro: Versão não informada!" && return 1
+    [ -z "${1:-}" ] && echo "Erro: Versão não informada!" && return 1
 
-    local versao="$1"
+    local versao="${1:-}"
     local alvo="$DIR_PYTHON/$versao"
     local link_atual=$(readlink "$DIR_ATUAL" 2>/dev/null)
     local versao_atual=""
@@ -261,15 +265,33 @@ listar_versoes() {
 }
 
 # Controle principal de execução
-case "$1" in
+case "${1:-}" in
     "instalar")
-        instalar_python "$2"
+        instalar_python "${2:-}"
         ;;
     "definir")
-        definir_versao "$2"
+        if [ -z "${2:-}" ]; then
+            echo "Erro: versão não informada!"
+            mostrar_ajuda
+        else
+            if definir_versao "${2:-}"; then
+                : #Sucesso
+            else
+                echo "Erro: Versão inválida ou não instalada"
+            fi
+        fi
         ;;
     "remover")
-        remover_versao "$2"
+         if [ -z "${2:-}" ]; then
+            echo "Erro: versão não informada!"
+            mostrar_ajuda
+        else
+            if remover_versao "${2:-}"; then
+                : #Sucesso
+            else
+                echo "Erro: Versão inválida ou não instalada"
+            fi
+        fi 
         ;;
     "listar")
         listar_versoes
