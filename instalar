@@ -11,8 +11,8 @@ TEMP_DIR=$(mktemp -d)
 NOME_ARQUIVO="gerenciador-python"
 URL_DOWNLOAD="https://raw.githubusercontent.com/souza-lb/gerenciador-python/main/gerenciador-python"
 
-# Verifica se o download foi bem sucedido
-if ! wget -q "$URL_DOWNLOAD" -O "$TEMP_DIR/$NOME_ARQUIVO"; then
+echo "Executando download..."
+if ! wget --no-verbose --show-progress "$URL_DOWNLOAD" -O "$TEMP_DIR/$NOME_ARQUIVO"; then
     echo "Erro ao baixar o arquivo!"
     rm -rf "$TEMP_DIR"
     exit 1
@@ -30,13 +30,8 @@ if ! grep -q "# CONFIG_GERENCIADOR_AUTO" "$HOME/.bashrc"; then
     } >> "$HOME/.bashrc"
 fi
 
-echo "Instalando dependências para compilação do python..."
-sudo apt update && sudo apt install -y \
-    build-essential libssl-dev zlib1g-dev \
-    libncurses5-dev libncursesw5-dev libreadline-dev \
-    libsqlite3-dev libgdbm-dev libdb5.3-dev libbz2-dev \
-    libexpat1-dev liblzma-dev tk-dev libffi-dev
-
+echo "Executando limpeza..."  # Nova mensagem adicionada
 rm -rf "$TEMP_DIR"
+
 echo "Instalação concluída!"
 echo "Execute: source ~/.bashrc"
