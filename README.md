@@ -38,7 +38,7 @@ variáveis de ambiente no basrc garantindo que elas apontem para a versão que o
 <b>No terminal com sua conta de usuário comum execute:</b>
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/souza-lb/gerenciador-python/main/gerenciador-instalar | bash
+wget -qO- https://raw.githubusercontent.com/souza-lb/gerenciador-python/main/instalar | bash
 ```
 <b> Requisitos:</b>
 * Sistema Debian 12 (ou demais sistemas baseados em Debian...)
