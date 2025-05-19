@@ -5,67 +5,38 @@ set -euo pipefail
 # Versão: 4.0
 # data: 19/05/2025
 
-# O que esse script faz?
-# Ele instala o gerenciador-python na pasta do usuário corrente.
-
-
 echo "Iniciando instalação..."
 
-# Cria diretório temporário para download
 TEMP_DIR=$(mktemp -d)
-
-# Nome arquivo
 NOME_ARQUIVO="gerenciador-python"
+URL_DOWNLOAD="https://raw.githubusercontent.com/souza-lb/gerenciador-python/main/gerenciador-python"
 
-# URL para download
-URL_DOWNLOAD="https://raw.githubusercontent.com/souza-lb/gerenciador-python/refs/heads/main/gerenciador-python"
-
-# Efetua o download do arquivo do gerenciador
-wget -q "$URL_DOWNLOAD" -O "$TEMP_DIR/$NOME_ARQUIVO"
-
-# Concede permissão de execução
-chmod +x "$TEMP_DIR/$NOME_ARQUIVO"
-
-# Criar diretório .bin na pasta home do usuário
-mkdir -p $HOME/.bin
-
-# Copiar o arquivo gerenciador para o diretório .bin
-cp "$TEMP_DIR/$NOME_ARQUIVO" $HOME/.bin/
-
-# Adicionar o PATH ao .bashrc se não existir
-if ! grep -q "# CONFIG_GERENCIADOR_AUTO" $HOME/.bashrc; then
-    echo -e "\n"
-    echo -e  "\n# CONFIG_GERENCIADOR_AUTO" >> $HOME/.bashrc 
-    echo 'export PATH="$PATH:$HOME/.bin"' >> $HOME/.bashrc
-    echo "# ------------------------------" >> $HOME/.bashrc
+# Verifica se o download foi bem sucedido
+if ! wget -q "$URL_DOWNLOAD" -O "$TEMP_DIR/$NOME_ARQUIVO"; then
+    echo "Erro ao baixar o arquivo!"
+    rm -rf "$TEMP_DIR"
+    return 1
 fi
 
-# Instalação de dependências para compilação Python
+chmod +x "$TEMP_DIR/$NOME_ARQUIVO"
+mkdir -p "$HOME/.bin"
+cp "$TEMP_DIR/$NOME_ARQUIVO" "$HOME/.bin/"
+
+if ! grep -q "# CONFIG_GERENCIADOR_AUTO" "$HOME/.bashrc"; then
+    {
+        echo -e "\n# CONFIG_GERENCIADOR_AUTO"
+        echo 'export PATH="$PATH:$HOME/.bin"'
+        echo "# ------------------------------"
+    } >> "$HOME/.bashrc"
+fi
+
 echo "Instalando dependências para compilação do python..."
-sudo apt install -y \
-    build-essential \
-    libssl-dev \
-    zlib1g-dev \
-    libncurses5-dev \
-    libncursesw5-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libgdbm-dev \
-    libdb5.3-dev \
-    libbz2-dev \
-    libexpat1-dev \
-    liblzma-dev \
-    tk-dev \
-    libffi-dev
+sudo apt update && sudo apt install -y \
+    build-essential libssl-dev zlib1g-dev \
+    libncurses5-dev libncursesw5-dev libreadline-dev \
+    libsqlite3-dev libgdbm-dev libdb5.3-dev libbz2-dev \
+    libexpat1-dev liblzma-dev tk-dev libffi-dev
 
-echo "Instalação de dependências concluída!"
-
-
-echo "Limpando arquivos temporários..."
 rm -rf "$TEMP_DIR"
-echo "Limpeza concluída!"
-
-# Mensagem final
 echo "Instalação concluída!"
-echo "Para aplicar as alterações, execute:"
-echo "source ~/.bashrc"
+echo "Execute: source ~/.bashrc"
