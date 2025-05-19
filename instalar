@@ -30,7 +30,7 @@ if ! grep -q "# CONFIG_GERENCIADOR_AUTO" "$HOME/.bashrc"; then
     } >> "$HOME/.bashrc"
 fi
 
-echo "Executando limpeza..."  # Nova mensagem adicionada
+echo "Executando limpeza..."
 rm -rf "$TEMP_DIR"
 
 echo "Instalação concluída!"
