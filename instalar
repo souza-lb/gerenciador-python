@@ -81,7 +81,7 @@ check_dependencies() {
 check_existing_installation() {
     if [ -f "${INSTALL_DIR}/${NOME_ARQUIVO}" ]; then
         echo -e "${YELLOW}Aviso: O arquivo ${NOME_ARQUIVO} já existe em ${INSTALL_DIR}.${NC}"
-        read -p "Deseja sobrescrever? [s/N]: " resposta
+        read -p "Deseja sobrescrever? [s/N]: " resposta < /dev/tty
         if [[ ! "$resposta" =~ ^[Ss]$ ]]; then
             echo -e "${RED}Instalação cancelada pelo usuário.${NC}"
             return 0
