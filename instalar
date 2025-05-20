@@ -106,7 +106,7 @@ install_file() {
     fi
 }
 
-# Configuração do PATH
+# Configuração do PATH (SEÇÃO MODIFICADA)
 configure_path() {
     echo -e "\n${BLUE}3/4 Configurando ambiente...${NC}"
     
@@ -118,7 +118,7 @@ configure_path() {
         {
             echo -e "\n${marker}"
             echo 'export PATH="$PATH:$HOME/.bin"'
-            echo -e "${marker}"
+            echo "# ------------------------------"
         } >> "$bashrc"
         echo -e "Variável PATH atualizada com: ${GREEN}$HOME/.bin${NC}"
     else
