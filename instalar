@@ -1,37 +1,151 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Autor: Leonardo Bruno
-# Versão: 4.0
-# data: 19/05/2025
+# Cores para mensagens
+check_ansi_support() {
+    [[ -t 1 ]] && return 0 || return 1
+}
+if check_ansi_support; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    BLUE='\033[0;34m'
+    CYAN='\033[0;36m'
+    NC='\033[0m' # No Color
+else
+    RED=''; GREEN=''; YELLOW=''; BLUE=''; CYAN=''; NC=''
+fi
 
-echo "Iniciando instalação..."
-
-TEMP_DIR=$(mktemp -d)
+# Configurações
 NOME_ARQUIVO="gerenciador-python"
 URL_DOWNLOAD="https://raw.githubusercontent.com/souza-lb/gerenciador-python/main/gerenciador-python"
+INSTALL_DIR="$HOME/.bin"
+TEMP_DIR=$(mktemp -d)
 
-echo "Executando download..."
-if ! wget --no-verbose --show-progress "$URL_DOWNLOAD" -O "$TEMP_DIR/$NOME_ARQUIVO"; then
-    echo "Erro ao baixar o arquivo!"
-    rm -rf "$TEMP_DIR"
-    exit 1
-fi
+# Mensagem inicial
+echo -e "${GREEN}"
+echo "----------------------------------------------------------"
+echo "      Instalação do Gerenciador Python - Versão 5.0       "
+echo "----------------------------------------------------------"
+echo -e "${NC}"
+echo -e "${CYAN}Este script irá:${NC}"
+echo "1. Baixar o gerenciador de versões Python"
+echo "2. Instalar em: ${INSTALL_DIR}/"
+echo "3. Configurar PATH no .bashrc"
+echo "4. Realizar limpeza automática"
+echo -e "\n${YELLOW}Verificando pré-requisitos...${NC}"
 
-chmod +x "$TEMP_DIR/$NOME_ARQUIVO"
-mkdir -p "$HOME/.bin"
-cp "$TEMP_DIR/$NOME_ARQUIVO" "$HOME/.bin/"
+# Verifica dependências
+check_dependencies() {
+    local missing=()
+    for cmd in wget; do
+        if ! command -v "$cmd" &> /dev/null; then
+            missing+=("$cmd")
+        fi
+    done
 
-if ! grep -q "# CONFIG_GERENCIADOR_AUTO" "$HOME/.bashrc"; then
-    {
-        echo -e "\n# CONFIG_GERENCIADOR_AUTO"
-        echo 'export PATH="$PATH:$HOME/.bin"'
-        echo "# ------------------------------"
-    } >> "$HOME/.bashrc"
-fi
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo -e "${RED}Erro: Dependências necessárias não encontradas:${NC}"
+        printf ' - %s\n' "${missing[@]}"
+        exit 1
+    fi
+}
 
-echo "Executando limpeza..."
-rm -rf "$TEMP_DIR"
+# Verifica instalação existente
+check_existing_installation() {
+    if [ -f "${INSTALL_DIR}/${NOME_ARQUIVO}" ]; then
+        echo -e "${YELLOW}Aviso: O arquivo ${NOME_ARQUIVO} já existe em ${INSTALL_DIR}.${NC}"
+        read -p "Deseja sobrescrever? [s/N]: " resposta
+        if [[ ! "$resposta" =~ ^[Ss]$ ]]; then
+            echo -e "${RED}Instalação cancelada pelo usuário.${NC}"
+            exit 0
+        fi
+    fi
+}
 
-echo "Instalação concluída!"
-echo "Execute: source ~/.bashrc"
+# Função de limpeza
+cleanup() {
+    echo -e "\n${BLUE}Realizando limpeza...${NC}"
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR" && echo -e "Pasta temporária removida: ${CYAN}${TEMP_DIR}${NC}"
+    fi
+}
+
+# Configura trap para garantir limpeza
+trap cleanup EXIT
+
+# Etapa de download
+download_file() {
+    echo -e "\n${BLUE}1/4 Baixando gerenciador...${NC}"
+    echo -e "Origem: ${CYAN}${URL_DOWNLOAD}${NC}"
+    echo -e "Destino: ${CYAN}${TEMP_DIR}/${NOME_ARQUIVO}${NC}"
+    
+    if wget --no-verbose --show-progress -q -P "$TEMP_DIR" "$URL_DOWNLOAD"; then
+        echo -e "${GREEN}Download concluído com sucesso!${NC}"
+    else
+        echo -e "${RED}Falha no download. Verifique a conexão ou URL.${NC}"
+        exit 1
+    fi
+}
+
+# Etapa de instalação
+install_file() {
+    echo -e "\n${BLUE}2/4 Instalando...${NC}"
+    mkdir -p "$INSTALL_DIR"
+    
+    echo -e "Aplicando permissões executáveis..."
+    if ! chmod +x "${TEMP_DIR}/${NOME_ARQUIVO}"; then
+        echo -e "${RED}Erro ao definir permissões executáveis!${NC}"
+        exit 1
+    fi
+    
+    echo -e "Movendo para diretório de instalação..."
+    if ! mv -f "${TEMP_DIR}/${NOME_ARQUIVO}" "${INSTALL_DIR}/"; then
+        echo -e "${RED}Erro ao copiar o arquivo!${NC}"
+        exit 1
+    fi
+}
+
+# Configuração do PATH
+configure_path() {
+    echo -e "\n${BLUE}3/4 Configurando ambiente...${NC}"
+    
+    local marker="# CONFIG_GERENCIADOR_AUTO"
+    local bashrc="$HOME/.bashrc"
+    
+    if ! grep -q "$marker" "$bashrc"; then
+        echo -e "${CYAN}Adicionando PATH no .bashrc${NC}"
+        {
+            echo -e "\n${marker}"
+            echo 'export PATH="$PATH:$HOME/.bin"'
+            echo -e "${marker}"
+        } >> "$bashrc"
+        echo -e "Variável PATH atualizada com: ${GREEN}$HOME/.bin${NC}"
+    else
+        echo -e "${YELLOW}Configuração já existe no .bashrc. Nenhuma alteração necessária.${NC}"
+    fi
+}
+
+# Função principal
+main() {
+    check_dependencies
+    check_existing_installation
+    download_file
+    install_file
+    configure_path
+    
+    echo -e "\n${GREEN}4/4 Finalizando...${NC}"
+    echo -e "${GREEN}----------------------------------------------------------${NC}"
+    echo -e "${GREEN}Instalação concluída com sucesso!${NC}"
+    echo -e "\nPróximos passos:"
+    echo -e "1. Recarregue as configurações do shell:"
+    echo -e "   ${CYAN}source ~/.bashrc${NC}"
+    echo -e "2. Verifique a instalação:"
+    echo -e "   ${CYAN}which ${NOME_ARQUIVO}${NC}"
+    echo -e "3. Execute o gerenciador:"
+    echo -e "   ${CYAN}${NOME_ARQUIVO} ajuda${NC}"
+    echo -e "\n${BLUE}Dica: Feche e reabra o terminal para garantir que as alterações tenham efeito.${NC}"
+}
+
+# Executa o script
+main
