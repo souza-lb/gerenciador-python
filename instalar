@@ -29,13 +29,39 @@ echo "      Instalação do Gerenciador Python - Versão 5.0       "
 echo "----------------------------------------------------------"
 echo -e "${NC}"
 echo -e "${CYAN}Este script irá:${NC}"
-echo "1. Baixar o gerenciador de versões Python"
-echo "2. Instalar em: ${INSTALL_DIR}/"
-echo "3. Configurar PATH no .bashrc"
-echo "4. Realizar limpeza automática"
+echo "1. Instalar dependências do sistema"
+echo "2. Baixar o gerenciador de versões Python"
+echo "3. Instalar em: ${INSTALL_DIR}/"
+echo "4. Configurar PATH no .bashrc"
+echo "5. Realizar limpeza automática"
 echo -e "\n${YELLOW}Verificando pré-requisitos...${NC}"
 
-# Verifica dependências
+# Função para instalar dependências do sistema
+install_dependencies() {
+    echo -e "\n${BLUE}Instalando dependências do sistema...${NC}"
+    local pkgs_apt=(wget build-essential libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libreadline-dev libsqlite3-dev libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev tk-dev libffi-dev)
+    local pkgs_dnf=(wget openssl-devel zlib-devel ncurses-devel readline-devel sqlite-devel gdbm-devel libdb-devel bzip2-devel expat-devel xz-devel tk-devel libffi-devel)
+
+    if command -v apt-get &>/dev/null; then
+        echo -e "${CYAN}Detectado apt, instalando pacotes...${NC}"
+        sudo apt-get update && sudo apt-get -y install "${pkgs_apt[@]}" || {
+            echo -e "${RED}Erro durante a instalação das dependências.${NC}"
+            return 1
+        }
+    elif command -v dnf &>/dev/null; then
+        echo -e "${CYAN}Detectado dnf, instalando pacotes...${NC}"
+        sudo dnf -y groupinstall "Development Tools" && sudo dnf -y install "${pkgs_dnf[@]}" || {
+            echo -e "${RED}Erro durante a instalação das dependências.${NC}"
+            return 1
+        }
+    else
+        echo -e "${RED}Erro: Gerenciador de pacotes não suportado.${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}Dependências instaladas com sucesso!${NC}"
+}
+
+# Verifica dependências básicas
 check_dependencies() {
     local missing=()
     for cmd in wget; do
@@ -47,7 +73,7 @@ check_dependencies() {
     if [ ${#missing[@]} -gt 0 ]; then
         echo -e "${RED}Erro: Dependências necessárias não encontradas:${NC}"
         printf ' - %s\n' "${missing[@]}"
-        exit 1
+        return 1
     fi
 }
 
@@ -58,7 +84,7 @@ check_existing_installation() {
         read -p "Deseja sobrescrever? [s/N]: " resposta
         if [[ ! "$resposta" =~ ^[Ss]$ ]]; then
             echo -e "${RED}Instalação cancelada pelo usuário.${NC}"
-            exit 0
+            return 0
         fi
     fi
 }
@@ -76,7 +102,7 @@ trap cleanup EXIT
 
 # Etapa de download
 download_file() {
-    echo -e "\n${BLUE}1/4 Baixando gerenciador...${NC}"
+    echo -e "\n${BLUE}2/5 Baixando gerenciador...${NC}"
     echo -e "Origem: ${CYAN}${URL_DOWNLOAD}${NC}"
     echo -e "Destino: ${CYAN}${TEMP_DIR}/${NOME_ARQUIVO}${NC}"
     
@@ -84,31 +110,31 @@ download_file() {
         echo -e "${GREEN}Download concluído com sucesso!${NC}"
     else
         echo -e "${RED}Falha no download. Verifique a conexão ou URL.${NC}"
-        exit 1
+        return 1
     fi
 }
 
 # Etapa de instalação
 install_file() {
-    echo -e "\n${BLUE}2/4 Instalando...${NC}"
+    echo -e "\n${BLUE}3/5 Instalando...${NC}"
     mkdir -p "$INSTALL_DIR"
     
     echo -e "Aplicando permissões executáveis..."
     if ! chmod +x "${TEMP_DIR}/${NOME_ARQUIVO}"; then
         echo -e "${RED}Erro ao definir permissões executáveis!${NC}"
-        exit 1
+        return 1
     fi
     
     echo -e "Movendo para diretório de instalação..."
     if ! mv -f "${TEMP_DIR}/${NOME_ARQUIVO}" "${INSTALL_DIR}/"; then
         echo -e "${RED}Erro ao copiar o arquivo!${NC}"
-        exit 1
+        return 1
     fi
 }
 
-# Configuração do PATH (SEÇÃO MODIFICADA)
+# Configuração do PATH
 configure_path() {
-    echo -e "\n${BLUE}3/4 Configurando ambiente...${NC}"
+    echo -e "\n${BLUE}4/5 Configurando ambiente...${NC}"
     
     local marker="# CONFIG_GERENCIADOR_AUTO"
     local bashrc="$HOME/.bashrc"
@@ -128,13 +154,14 @@ configure_path() {
 
 # Função principal
 main() {
+    install_dependencies
     check_dependencies
     check_existing_installation
     download_file
     install_file
     configure_path
     
-    echo -e "\n${GREEN}4/4 Finalizando...${NC}"
+    echo -e "\n${GREEN}5/5 Finalizando...${NC}"
     echo -e "${GREEN}----------------------------------------------------------${NC}"
     echo -e "${GREEN}Instalação concluída com sucesso!${NC}"
     echo -e "\nPróximos passos:"
